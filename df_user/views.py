@@ -8,6 +8,7 @@ from . import task
 from df_order.models import Order
 from .decorators import require_login
 from df_goods.models import GoodsInfo
+from df_cart.models import Cart
 # Create your views here.
 
 
@@ -326,6 +327,7 @@ def verify(request):
                 'page_name': '验证手机号' if t == 'p' else '验证邮箱',
                 'user': request.df_user,
                 't': t,
+                'cart_count': Cart.objects.filter(user=request.df_user).count(),
             }
             return render(request, 'df_user/user_center_verify.html', context)
 
@@ -345,7 +347,8 @@ def verify(request):
                     'page_name': '验证手机号',
                     'user': request.df_user,
                     't': t,
-                    'msg': '验证码错误！'
+                    'msg': '验证码错误！',
+                    'cart_count': Cart.objects.filter(user=request.df_user).count(),
                 }
                 return render(request, 'df_user/user_center_verify.html', context)
 
@@ -363,7 +366,8 @@ def verify(request):
                     'page_name': '验证手机号',
                     'user': request.df_user,
                     't': t,
-                    'msg': '验证码错误！'
+                    'msg': '验证码错误！',
+                    'cart_count': Cart.objects.filter(user=request.df_user).count(),
                 }
                 return render(request, 'df_user/user_center_verify.html', context)
 
