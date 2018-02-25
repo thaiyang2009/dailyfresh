@@ -26,7 +26,7 @@ SECRET_KEY = '8wgp)cgx0&!uvfc80#ct-y4y@*0x*%o0^b)ji0)iv#s&s6&9)4'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -136,6 +136,7 @@ STATICFILES_DIRS = [
 
 # 静态文件目录
 MEDIA_ROOT = os.path.join(BASE_DIR, 'static')
+STATIC_ROOT='/var/www/dailyfresh/static/'
 
 # 富文本框 admin 配置
 TINYMCE_DEFAULT_CONFIG = {
@@ -170,12 +171,22 @@ ALIDAYU_CACHE_TIMEOUT = 60
 
 
 # 缓存配置，未指定数据则使用数据库1
+#CACHES = {
+#    "default": {
+#        "BACKEND": "redis_cache.cache.RedisCache",
+#        "LOCATION": "127.0.0.1:6379",
+#        'TIMEOUT': 60,
+#    },
+#}
+
 CACHES = {
     "default": {
-        "BACKEND": "redis_cache.cache.RedisCache",
-        "LOCATION": "localhost:6379",
-        'TIMEOUT': 60,
-    },
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379/0",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
 }
 
 # 发送邮件配置
@@ -201,3 +212,51 @@ CELERYBEAT_LOG_FILE = os.path.join(BASE_DIR, 'logs', 'celery', 'beat.log')
 import djcelery
 djcelery.setup_loader()
 CELERY_IMPORTS = ('df_user.task')
+
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'filters': {
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        }, # 针对 DEBUG = True 的情况
+    },
+    'formatters': {
+        'standard': {
+            'format': '%(levelname)s %(asctime)s %(pathname)s %(filename)s %(module)s %(funcName)s %(lineno)d: %(message)s'
+        }, # 对日志信息进行格式化，每个字段对应了日志格式中的一个字段，更多字段参考官网文档，我认为这些字段比较合适，输出类似于下面的内容
+        # INFO 2016-09-03 16:25:20,067 /home/ubuntu/mysite/views.py views.py views get 29: some info...
+    },
+    'handlers': {
+        'mail_admins': {
+            'level': 'ERROR',
+            'class': 'django.utils.log.AdminEmailHandler',
+             'formatter':'standard'
+        },
+        'file_handler': {
+             'level': 'DEBUG',
+             'class': 'logging.handlers.TimedRotatingFileHandler',
+             'filename': os.path.join(BASE_DIR, 'log/debug.log'),
+             'formatter':'standard'
+        }, # 用于文件输出
+        'console':{
+            'level': 'INFO',
+            'filters': ['require_debug_true'],
+            'class': 'logging.StreamHandler',
+            'formatter': 'standard'
+        },
+    },
+    'loggers': {
+        'django': {
+            'handlers' :['file_handler', 'console'],
+            'level':'DEBUG',
+            'propagate': True # 是否继承父类的log信息
+        }, # handlers 来自于上面的 handlers 定义的内容
+        'django.request': {
+            'handlers': ['mail_admins'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+    }
+}
