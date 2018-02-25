@@ -1,0 +1,12 @@
+<div class="new_goods">
+    <h3>新品推荐</h3>
+    <ul>
+        {% for new_good in new_goods %}
+            <li>
+                <a href="{% url 'detail' new_good.id %}"><img src="/static/{{ new_good.gpic }}"></a>
+                <h4><a href="#">{{ new_good.gtitle }}</a></h4>
+                <div class="prize">￥{{ new_good.gprice }}</div>
+            </li>
+        {% endfor %}
+    </ul>
+</div>

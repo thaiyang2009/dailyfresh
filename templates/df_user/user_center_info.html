@@ -1,0 +1,152 @@
+{% extends 'df_user/base_user.html' %}
+
+{% load static %}
+
+{% block title %}
+    用户信息
+{% endblock %}
+
+{% block right_content %}
+
+
+    <div class="right_content clearfix">
+        <div class="info_con clearfix">
+            <h3 class="common_title2">基本信息</h3>
+            <ul class="user_info_list">
+                <li data-name="uname">
+                    <span>用&nbsp;&nbsp;户&nbsp;&nbsp;名：</span>
+                    <b>{{ user.uname }}</b>
+                </li>
+                <li data-name="nikename">
+                    <span>昵&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;称：</span>
+                    <b>{{ user.nikename|default:'--' }}</b>
+                </li>
+
+                <li data-name="uphone">
+                    <span>联系方式：</span>
+                    <b>{{ user.uphone|default:'--' }}</b>
+                    {% if user.verify_p == False %}
+                        <a id="verify_btn" href="{% url 'verify' %}?t=p" style="padding-left: 10px">验证</a>
+                    {% else %}
+                        <a style="padding-left: 10px">已验证</a>
+                    {% endif %}
+                </li>
+                <li data-name="uemail">
+                    <span>邮箱地址：</span>
+                    <b>{{ user.uemail|default:'--' }}</b>
+                    {% if user.verify_e == False %}
+                        <a id="verify_btn" href="{% url 'verify' %}?t=e" style="padding-left: 10px">验证</a>
+                    {% else %}
+                        <a style="padding-left: 10px">已验证</a>
+                    {% endif %}
+                </li>
+                <li style="position: relative;">
+                    <a id="edit_btn" href="javascript:;"
+                       style="position: absolute; bottom: -10px; right: 0; padding: 0 10px;">修改</a>
+                </li>
+            </ul>
+        </div>
+
+        <h3 class="common_title2">最近浏览</h3>
+        <div class="has_view_list">
+            <ul class="goods_type_list clearfix">
+                {% for record in records %}
+                    <li>
+                        <a href="{% url 'detail' record.id %}"><img src="/static/{{ record.gpic }}"></a>
+                        <h4><a href="{% url 'detail' record.id %}">{{ record.gtitle }}</a></h4>
+                        <div class="operate">
+                            <span class="prize">￥{{ record.gprice }}</span>
+                            <span class="unit">{{ record.gprice }}/{{ record.gunit }}</span>
+                            <a href="#" class="add_goods" title="加入购物车"></a>
+                        </div>
+                    </li>
+                {% endfor %}
+
+
+            </ul>
+        </div>
+    </div>
+
+    <script>
+
+
+        function a() {
+            // 获取所有li
+            var $lis = $(this).parent().siblings(':gt(0)');
+            // 初始化两个数组，存放修改后的键和值
+            var ks = [];
+            var vs = [];
+            // 查找所有修改过来值，添加到上面的数组
+            $lis.each(function () {
+                var $input = $(this).find('input');
+                var old = $input.data('old');
+                var ne = $input.val();
+                if (ne && ne != old) {
+                    ks.push($(this).data('name'));
+                    vs.push(ne);
+                }
+            });
+            // 创建空字典，存放要修改的数据
+            var cdata = {};
+            // 判断是否有修改
+            if (ks.length > 0) {
+                // 信息有修改，遍历修改项，并组成字典
+                for (var i = 0; i < ks.length; i++) {
+                    cdata[ks[i]] = vs[i];
+                }
+                $.post({
+                    url: "{% url 'edit_info' %}",
+                    data: {'data': JSON.stringify(cdata)},  // 将字典转成json传给服务端
+                    success: function (data) {
+                        if (data.status == 200) {
+                            // 修改成功！
+                            $lis.each(function () {
+                                var $this = $(this);
+                                var $input = $this.find('input');
+                                if ($this.data('name') in data.data) {
+                                    $input.before('<b>' + data.data[$this.data('name')] + '</b>').remove();
+                                } else {
+                                    $input.before('<b>' + $input.data('old') + '</b>').remove();
+                                }
+                            });
+                        } else {
+                            alert("修改失败, 请稍后重试！")
+                        }
+                    }
+                })
+            } else {
+                // 没有修改，还原回去
+                $lis.each(function () {
+                    var $input = $(this).find('input');
+                    $input.before('<b>' + $input.data('old') + '</b>').remove();
+                });
+
+            }
+            $(this).text('修改').unbind().click(b);
+
+        }
+
+
+        function b() {
+            var $lis = $(this).parent().siblings(':gt(0)');
+            $lis.each(function () {
+                var $this = $(this);
+                var $b = $this.find('b');
+                var old = $b.text();
+                $b.before('<input type="text" value="' + old + '" data-old="' + old + '">').remove();
+            });
+            $(this).text('完成');
+            $(this).unbind();
+            $(this).click(a)
+        }
+
+
+        $(function () {
+
+
+            $('#edit_btn').click(b)
+        })
+
+    </script>
+
+{% endblock %}

@@ -1,0 +1,66 @@
+{% extends 'df_user/base_user.html' %}
+{% load order_page_handler %}
+
+{% block title %}
+    我的订单
+{% endblock %}
+
+
+{% block right_content %}
+
+
+    <div class="right_content clearfix">
+        <h3 class="common_title2">全部订单</h3>
+
+        {% if page.paginator.count == 0 %}
+            <div style="text-align: center">您还没有订单！ <a href="{% url 'index' %}">去主页</a></div>
+        {% else %}
+            {% for order in page.object_list %}
+                <ul class="order_list_th w978 clearfix">
+                    <li class="col01">{{ order.ctime|date:"Y-m-d H:i:s" }}</li>
+                    <li class="col02">订单号：{{ order.order_id }}</li>
+                    <li class="col02 stress">状态：{{ order.get_status_display }}</li>
+                </ul>
+                <table class="order_list_table w980">
+                    <tbody>
+                    <tr>
+                        <td width="55%">
+                            {% for detail in order.orderdetail_set.all %}
+                                <ul class="order_goods_list clearfix">
+                                    <li class="col01"><a href="{% url 'detail' detail.id %}"><img src="/static/{{ detail.goods.gpic }}"></a></li>
+                                    <li class="col02"><a href="{% url 'detail' detail.id %}">{{ detail.goods.gtitle }}</a>
+
+                                        <em>{{ detail.price }}元/{{ detail.unit }}</em></li>
+                                    <li class="col03">{{ detail.count }}</li>
+                                    <li class="col04">{{ detail.total }}元</li>
+                                </ul>
+                            {% endfor %}
+
+                        </td>
+                        <td width="15%">
+                            {{ order.total }}元
+                            <br>
+                            (含运费：{{ order.fare }}元)
+                        </td>
+                        <td width="15%">{{ order.get_status_display }}</td>
+                        <td width="15%"><a href="#" class="oper_btn">
+                            {% if order.status == 0 %}
+                                去付款
+                            {% else %}
+                                查物流
+                            {% endif %}
+                        </a></td>
+                    </tr>
+                    </tbody>
+                </table>
+            {% endfor %}
+        {% endif %}
+
+
+        {% order_page_handler page %}
+
+    </div>
+
+
+
+{% endblock %}

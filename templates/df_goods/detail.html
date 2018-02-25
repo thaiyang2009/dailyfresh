@@ -1,0 +1,170 @@
+{% extends 'base_top.html' %}
+{% load static %}
+
+{% block title %}
+    详情
+{% endblock %}
+
+{% block body %}
+
+    <div class="navbar_con">
+        <div class="navbar clearfix">
+            {% include 'df_goods/subnav.html' %}
+            <ul class="navlist fl">
+                <li><a href="{% url 'index' %}">首页</a></li>
+                <li class="interval">|</li>
+                <li><a href="">手机生鲜</a></li>
+                <li class="interval">|</li>
+                <li><a href="">抽奖</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="breadcrumb">
+        <a href="{% url 'list' 0 0 1 %}">全部分类</a>
+        <span>></span>
+        <a href="{% url 'list' goods.gtype.id 0 1 %}">{{ goods.gtype.ttitle }}</a>
+        <span>></span>
+        <a href="javascript:;">商品详情</a>
+    </div>
+
+    <div class="goods_detail_con clearfix" data-gid="{{ goods.id }}">
+        <div class="goods_detail_pic fl"><img src="/static/{{ goods.gbig_pic }}"></div>
+
+        <div class="goods_detail_list fr">
+            <h3>{{ goods.gtitle }}</h3>
+            <p>{{ goods.gsummary }}</p>
+            <div class="prize_bar">
+                <span class="show_pirze">¥<em>{{ goods.gprice }}</em></span>
+                <span class="show_unit">单  位：{{ goods.gunit }}</span>
+                <span class="show_storage">库  存：<em {% if goods.gstorage < goods.gwarning %}style="color: red; font-weight: bold"{% endif %}>{{ goods.gstorage }}</em></span>
+            </div>
+            <div class="goods_num clearfix">
+                <div class="num_name fl">数 量：</div>
+                <div class="num_add fl">
+                    <input type="text" class="num_show fl" value="1">
+                    <a href="javascript:;" class="add fr">+</a>
+                    <a href="javascript:;" class="minus fr">-</a>
+                </div>
+            </div>
+            <div class="total">总价：<em>16.80元</em></div>
+            <div class="operate_btn">
+                <a href="javascript:;" class="buy_btn">立即购买</a>
+                <a href="javascript:;" class="add_cart" id="add_cart">加入购物车</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="main_wrap clearfix">
+        <div class="l_wrap fl clearfix">
+            {% include 'df_goods/new_goods.html' %}
+        </div>
+
+        <div class="r_wrap fr clearfix">
+            <ul class="detail_tab clearfix">
+                <li class="active">商品介绍</li>
+                <li>评论</li>
+            </ul>
+
+            <div class="tab_content">
+                {{ goods.gcontent|safe }}
+            </div>
+
+        </div>
+    </div>
+
+    <div class="add_jump"></div>
+
+    <script>
+
+    function total() {
+        var $total = $('.total em');
+        var price = $('.show_pirze em').eq(0).text();
+        var $count = $('.num_show');
+        var count = parseInt($count.val());
+        if (count < 1){
+            count = 1
+        }
+        $count.val(count);
+        var total = parseFloat(price) * parseInt(count);
+        $total.text(total.toFixed(2));
+    }
+
+
+
+    $(function () {
+        // 初始化总价
+        total();
+
+        // 绑定数量失去焦点事件
+        $('.num_show').blur(total);
+
+        // 绑定增加数量点击事件
+        $('.add').click(function () {
+            var $storage = $('.show_storage em').eq(0);
+            var $count = $(this).prev();
+            var new_count = parseInt($count.val()) + 1;
+            if (new_count > parseInt($storage.text())){
+                alert("数量超过库存数量！");
+                return false
+            }
+            $count.val(new_count).blur();
+        });
+
+        // 绑定减少数量点击事件
+        $('.minus').click(function () {
+            var $count = $(this).prev().prev();
+            var new_count = parseInt($count.val()) - 1;
+            if (new_count < 1){
+                alert("数量不能为零！");
+                return false
+            }
+            $count.val(new_count).blur();
+        });
+
+        // 立即购买
+        $('.buy_btn').click(function () {
+            var base_url = "{% url 'place_order' %}";
+            var count = $('.num_show').val();
+            var url = base_url + "?gid=" + "{{ goods.id }}" + "&count=" + count;
+            window.location.href = url;
+
+
+        })
+    })
+    
+    </script>
+    
+    <script type="text/javascript">
+        var $add_x = $('#add_cart').offset().top;
+        var $add_y = $('#add_cart').offset().left;
+
+        var $to_x = $('#show_count').offset().top;
+        var $to_y = $('#show_count').offset().left;
+
+        $(".add_jump").css({'left': $add_y + 80, 'top': $add_x + 10, 'display': 'block'})
+        $('#add_cart').click(function () {
+
+            $.get({
+                url: "{% url 'add' %}",
+                data: {
+                    'gid': $('.goods_detail_con').data('gid'),
+                    'count': $('.num_show').val(),
+                },
+                success: function (data) {
+                    $(".add_jump").stop().animate({
+                        'left': $to_y + 7,
+                        'top': $to_x + 7
+                    },
+                    "fast", function () {
+                        $(".add_jump").fadeOut('fast', function () {
+                            $('#show_count').html(data.cart_count);
+                        });
+                    });
+                }
+            });
+
+
+        })
+    </script>
+{% endblock %}

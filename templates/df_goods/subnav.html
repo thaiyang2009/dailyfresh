@@ -1,0 +1,9 @@
+<div class="subnav_con fl">
+    <h1>全部商品分类</h1>
+    <span></span>
+    <ul class="subnav">
+        {% for type in types %}
+            <li><a href="{% url 'list' type.id 0 1 %}" class="{{ type.tshow }}">{{ type.ttitle }}</a></li>
+        {% endfor %}
+    </ul>
+</div>

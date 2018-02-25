@@ -1,0 +1,245 @@
+{% extends 'base_top.html' %}
+
+{% block title %}
+    购物车
+{% endblock %}
+
+{% block body %}
+
+
+    <div class="total_count">全部商品<em>0</em>件</div>
+    <ul class="cart_list_th clearfix">
+        <li class="col01">商品名称</li>
+        <li class="col02">商品单位</li>
+        <li class="col03">商品价格</li>
+        <li class="col04">数量</li>
+        <li class="col05">小计</li>
+        <li class="col06">操作</li>
+    </ul>
+
+    {% if cart_li|length == 0 %}
+        <ul class="cart_list_td clearfix">
+         <li style="width: 100%;"><a href="{% url 'index' %}">您购物车还没有东西，去主页添加！</a></li>
+        </ul>
+
+    {% else %}
+    {% for cart in cart_li %}
+        <ul class="cart_list_td clearfix" data-gid="{{ cart.goods.id }}" data-cid="{{ cart.id }}">
+            <li class="col01"><input type="checkbox" name="" checked></li>
+            <li class="col02"><a href="{% url 'detail' cart.goods.id %}"><img src="/static/{{ cart.goods.gpic }}"></a></li>
+            <li class="col03">
+                <a href="{% url 'detail' cart.goods.id %}">{{ cart.goods.gtitle }}</a>
+                <br>
+                <em>{{ cart.goods.gprice }}元/{{ cart.goods.gunit }}</em>
+                <br>
+                库  存:<b>{{ cart.goods.gstorage }}</b>
+            </li>
+            <li class="col04">{{ cart.goods.gunit }}</li>
+            <li class="col05">{{ cart.goods.gprice }}元</li>
+            <li class="col06">
+                <div class="num_add">
+                    <a href="javascript:;" class="add fl">+</a>
+                    <input type="text" class="num_show fl" value="{{ cart.count }}">
+                    <a href="javascript:;" class="minus fl">-</a>
+                </div>
+            </li>
+            <li class="col07">{{ cart.goods.gprice }}元</li>
+            <li class="col08"><a href="javascript:;">删除</a></li>
+        </ul>
+    {% endfor %}
+    {% endif %}
+
+
+    <ul class="settlements">
+		<li class="col01"><input type="checkbox" name="" checked=""></li>
+		<li class="col02">全消</li>
+		<li class="col03">合计(不含运费)：<span>¥</span><em>0.00</em><br>共计<b>0</b>件商品</li>
+		<li class="col04"><a href="javascript:;">去结算</a></li>
+        <div style="display: none;">
+            <form action="{% url 'place_order' %}" method="get" id="form_commit">
+                <select name="cids" id="cids" multiple>
+                    {% for cart in cart_li %}
+                        <option value="{{ cart.id }}">{{ cart.goods.gtitle }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+        </div>
+
+	</ul>
+
+
+<script>
+
+    function total() {
+        // 找出所有的单价;
+        var $prices = $('.cart_list_td>.col05');
+        var price_array = [];
+        $prices.each(function () {
+            var s = $(this).text();
+            var n = parseFloat(s.substring(0, s.length-1));
+            price_array.push(n);
+        });
+        // console.log(price_array);
+
+        // 找了所有的数量;
+        var $counts = $('.cart_list_td .num_show');
+        var count_array = [];
+        $counts.each(function () {
+            count_array.push(parseInt($(this).val()));
+        });
+        // console.log(count_array);
+
+        // 计算小计
+        var $totals = $('.cart_list_td>.col07');
+        var count = 0;
+        var total = 0.0;
+        // 查找所有checkbox
+        var $checkboxs = $('.cart_list_td>.col01>input:checkbox');
+        for (var i=0; i<price_array.length; i++){
+            if ($checkboxs.eq(i).prop('checked')) {
+                var t = price_array[i] * count_array[i];
+                count += 1;
+                total += t;
+                $($totals[i]).text(t.toFixed(2) + '元');
+            }
+
+        }
+
+        $($('.settlements>.col03 em')[0]).text(total.toFixed(2));
+        $($('.settlements>.col03 b')[0]).text(count);
+        $($('.total_count em')[0]).text(count);
+
+    }
+
+    $(function () {
+
+        var $count = $('.num_show');
+
+        // 初始化总价
+        total();
+
+        // 绑定数量失去焦点事件
+        $count.blur(function () {
+            var $storage = $(this).parent().parent().prevAll('.col03').find('b').eq(0);
+            var new_count = parseInt($(this).val());
+            var max = parseInt($storage.text());
+            var gid = $(this).parents('ul.cart_list_td').eq(0).data('gid');
+            if (new_count > max){
+                $(this).val(max);
+                alert("数量超过库存数量！");
+                return false
+            } else if (new_count < 1) {
+                $(this).val(1);
+                alert("数量小于零！");
+                return false
+            };
+
+            $.get({
+                url: "{% url 'add' %}",
+                data: {'gid': gid, 'count': new_count},
+                success: function (data) {
+                    $(this).val(data.count);
+                    $storage.text(data.gstorage);
+                },
+            });
+
+            total();
+        });
+
+        // 绑定增加数量点击事件
+        $('.add').click(function () {
+            var $count = $(this).next();
+            var new_count = parseInt($count.val()) + 1;
+            $count.val(new_count).blur();
+        });
+
+        // 绑定减少数量点击事件
+        $('.minus').click(function () {
+            var $count = $(this).prev();
+            var new_count = parseInt($count.val()) - 1;
+            $count.val(new_count).blur();
+        });
+
+        // 购物车删除事件
+        $('.cart_list_td>.col08>a:first').click(function () {
+            var $ul_ele = $(this).parents('ul.cart_list_td');
+            var cid = $ul_ele.data('cid');
+            console.log(cid);
+            $.get({
+                url: "{% url 'del_cart' %}",
+                data: {'cid': cid},
+                success: function (data) {
+                    if (data.status == 200) {
+                        $ul_ele.remove();
+                        total();
+                    }
+                }
+            })
+        });
+
+        $('.settlements .col01 input:checkbox').change(function () {
+            var status = $(this).prop('checked');
+            var $checkboxs = $('.cart_list_td .col01 input:checkbox');
+            if (status === true) {
+                $checkboxs.prop('checked', true);
+                $('.settlements .col02').text('全消');
+            } else {
+                $checkboxs.prop('checked', false);
+                $('.settlements .col02').text('全选');
+            }
+            total();
+        });
+
+        $('.cart_list_td .col01 input:checkbox').change(function () {
+            var $checkbox_a = $('.settlements .col01 input:checkbox');
+            var checked_count = $('.cart_list_td .col01 input:checked').length;
+            var checkbox_count = $('.cart_list_td .col01 input:checkbox').length;
+            if (checked_count == checkbox_count){
+                $checkbox_a.prop('checked', true);
+                $('.settlements .col02').text('全消');
+            }else{
+                $checkbox_a.prop('checked', false);
+                $('.settlements .col02').text('全选');
+            }
+            total();
+        });
+
+        $('.settlements>.col04>a').click(function () {
+            var cids = [];
+            // 查找所有checkbox
+            var $checkboxs = $('.cart_list_td>.col01>input:checkbox');
+            for (var i=0; i<$checkboxs.length; i++){
+                var $checkbox = $checkboxs.eq(i);
+                if ($checkbox.prop('checked')) {
+                    var cid = $checkbox.parents('.cart_list_td').data('cid');
+                    cids.push(cid);
+                }
+            }
+            console.log('after post');
+
+            var $form = $('#form_commit');
+
+            var $options = $form.find('option');
+
+            $options.each(function () {
+                var cid = parseInt($(this).val());
+                console.log(cid)
+                console.log(cids)
+                if (cids.indexOf(cid) >= 0){
+                    $(this).prop("selected",true);
+                }
+            });
+
+            $('#form_commit').submit();
+
+            return false
+        })
+
+    })
+
+    </script>
+
+
+
+
+{% endblock %}

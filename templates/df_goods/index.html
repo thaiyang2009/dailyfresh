@@ -1,0 +1,91 @@
+{% extends 'base_top.html' %}
+{% load static %}
+
+{% block title %}
+    首页
+{% endblock %}
+
+{% block head %}
+    <script type="text/javascript" src="{% static 'js/jquery-ui.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/slide.js' %}"></script>
+
+{% endblock %}
+
+{% block body %}
+
+    <div class="navbar_con">
+        <div class="navbar">
+            <h1 class="fl">全部商品分类</h1>
+            <ul class="navlist fl">
+                <li><a href="{% url 'index' %}">首页</a></li>
+                <li class="interval">|</li>
+                <li><a href="">手机生鲜</a></li>
+                <li class="interval">|</li>
+                <li><a href="">抽奖</a></li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="center_con clearfix">
+        <ul class="subnav fl">
+            {% for type in goods_dic.keys %}
+                <li><a href="#model{{ type.id }}" class="{{ type.tshow }}">{{ type.ttitle }}</a></li>
+            {% endfor %}
+
+        </ul>
+        <div class="slide fl">
+            <ul class="slide_pics">
+                {% for slide in slides %}
+                    <li><a href="{% url 'detail' slide.goods.id %}"><img src="/static/{{ slide.spic }}" alt="{% if slide.salt %}{{ slide.salt }}{% else %}{{ slide.goods.gtitle }}{% endif %}" title="{% if slide.stitle %}{{ slide.stitle }}{% else %}{{ slide.goods.gtitle }}{% endif %}"></a></li>
+                {% endfor %}
+
+            </ul>
+            <div class="prev"></div>
+            <div class="next"></div>
+            <ul class="points"></ul>
+        </div>
+        <div class="adv fl">
+            {% for adv in advs %}
+                <a href="{% url 'detail' adv.goods.id %}"><img src="/static/{{ adv.apic }}" alt="{{ adv.aalt|default:adv.goods.gtitle }}" title="{{ adv.atitle|default:adv.goods.gtitle }}"></a>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% for type, goods in goods_dic.items %}
+        <div class="list_model">
+            <div class="list_title clearfix">
+                <h3 class="fl" id="model{{ type.id }}">{{ type.ttitle }}</h3>
+                <div class="subtitle fl">
+                    <span>|</span>
+                    {% if type.tcommend1 %}
+                        <a href="{% url 'detail' type.tcommend1.id %}">{{ type.tcommend1 }}</a>
+                    {% endif %}
+                    {% if type.tcommend2 %}
+                        <a href="{% url 'detail' type.tcommend2.id %}">{{ type.tcommend2 }}</a>
+                    {% endif %}
+                    {% if type.tcommend3 %}
+                        <a href="{% url 'detail' type.tcommend3.id %}">{{ type.tcommend3 }}</a>
+                    {% endif %}
+                </div>
+                <a href="{% url 'list' type.id 0 1 %}" class="goods_more fr" id="fruit_more">查看更多 ></a>
+            </div>
+
+            <div class="goods_con clearfix">
+                <div class="goods_banner fl"><a href="{% url 'list' type.id 0 1 %}"><img src="/static/{{ type.tbanner }}"></a></div>
+                <ul class="goods_list fl">
+                    {% for good in goods %}
+                        <li>
+                            <h4><a href="{% url 'detail' good.id %}">{{ good.gtitle }}</a></h4>
+                            <a href="{% url 'detail' good.id %}"><img src="/static/{{ good.gpic }}"></a>
+                            <div class="prize">¥ {{ good.gprice }}</div>
+                        </li>
+                    {% endfor %}
+
+
+                </ul>
+            </div>
+        </div>
+    {% endfor %}
+
+
+{% endblock %}

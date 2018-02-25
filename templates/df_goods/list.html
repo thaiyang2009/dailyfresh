@@ -1,0 +1,67 @@
+{% extends 'base_top.html' %}
+{% load page_handler %}
+
+{% block title %}
+    商品列表
+{% endblock %}
+
+
+{% block body %}
+
+	<div class="navbar_con">
+		<div class="navbar clearfix">
+			{% include 'df_goods/subnav.html' %}
+			<ul class="navlist fl">
+				<li><a href="{% url 'index' %}">首页</a></li>
+				<li class="interval">|</li>
+				<li><a href="">手机生鲜</a></li>
+				<li class="interval">|</li>
+				<li><a href="">抽奖</a></li>
+			</ul>
+		</div>
+	</div>
+
+	<div class="breadcrumb">
+        {% if gtype %}
+            <a href="{% url 'list' 0 0 1 %}">全部分类</a>
+            <span>></span>
+		    <a href="{% url 'list' tid 0 1 %}">{{ gtype.ttitle }}</a>
+        {% endif %}
+
+
+	</div>
+
+	<div class="main_wrap clearfix">
+		<div class="l_wrap fl clearfix">
+			{% include 'df_goods/new_goods.html' %}
+		</div>
+
+		<div class="r_wrap fr clearfix">
+			<div class="sort_bar">
+				<a href="{% url 'list' tid 0 1 %}" {% if sid == 0 %}class="active"{% endif %}>默认</a>
+				<a href="{% url 'list' tid 1 1  %}" {% if sid == 1 %}class="active"{% endif %}>价格</a>
+				<a href="{% url 'list' tid 2 1 %}" {% if sid == 2 %}class="active"{% endif %}>人气</a>
+			</div>
+
+			<ul class="goods_type_list clearfix">
+                {% for goods in page.object_list %}
+                    <li>
+                        <a href="{% url 'detail' goods.id %}"><img src="/static/{{ goods.gpic }}"></a>
+                        <h4><a href="{% url 'detail' goods.id %}">{{ goods.ttitle }}</a></h4>
+                        <div class="operate">
+                            <span class="prize">￥{{ goods.gprice }}</span>
+                            <span class="unit">{{ goods.gprice }}/{{ goods.gunit }}</span>
+                            <a href="{% url 'add' %}?gid={{ goods.id }}" class="add_goods" title="加入购物车"></a>
+                        </div>
+                    </li>
+
+                {% endfor %}
+
+			</ul>
+
+
+            {% page_handler page tid sid %}
+
+		</div>
+	</div>
+{% endblock %}

@@ -1,0 +1,122 @@
+{% extends 'df_user/base_user.html' %}
+{% load static %}
+
+{% load address_handle %}
+
+{% block title %}
+    收货地址
+{% endblock %}
+
+{% block right_content %}
+
+
+
+
+    <div class="right_content clearfix">
+        <h3 class="common_title2">编辑地址</h3>
+        <div class="site_con">
+            <form action="" method="post">
+                {% csrf_token %}
+                <div class="form_group">
+                    <label>收件人：</label>
+                    <input type="text" name="receiver" value="{{ addr.receiver }}">
+                </div>
+
+                <div class="form_group form_group2 addr_area">
+                    <label>选择区域：</label>
+
+                    {% select_handle addr %}
+
+
+                </div>
+
+                <div class="form_group form_group2">
+                    <label>详细地址：</label>
+                    <textarea class="site_area" name="address">{{ addr.address }}</textarea>
+                </div>
+
+                <div class="form_group">
+                    <label>手机：</label>
+                    <input type="text" name="phone" value="{{ addr.phone }}">
+                </div>
+                <div class="form_group">
+                    <label>邮编：</label>
+                    <input type="text" name="postcode" value="{{ addr.postcode }}">
+                </div>
+                <input type="submit" name="" value="提交" class="info_submit">
+            </form>
+        </div>
+    </div>
+
+    <script>
+        $(function () {
+
+
+            $('.addr_area').on('change', function (e) {
+                if (e.target.tagName.toLowerCase() == 'select') {
+
+                    var $this = $(e.target);
+                    var aid = $this.val();
+                    if (!aid) {
+                        return
+                    }
+                    $.get({
+                            url: "{% url 'area_handle' %}",
+                            data: {'aid': aid},
+                            dataType: 'JSON',
+                            success: function (data) {
+
+                                // 删除后面的select
+                                $this.nextAll().remove();
+
+                                if (data.data.length != 0) {
+                                    var ele = '';
+                                    ele += '<select><option value="">--选择--</option>';
+                                    $.each(data.data, function (index, item) {
+                                        ele += '<option value="' + item.id + '">' + item.name + '</option>'
+                                    });
+                                    ele += '</select>';
+
+                                    $this.after(ele);
+                                }
+
+
+                            }
+                        }
+                    )
+                }
+
+            });
+
+            $('input:submit').click(function () {
+                var aid = $('select:last').val();
+                if (!aid){
+                    alert("请先选择地区！");
+                    return false
+                }
+
+                var receiver = $('input[name="receiver"]').val();
+                if (!receiver || receiver.length<2){
+                    alert("请输入收件人！");
+                    return false
+                }
+
+                var phone = $('input[name="phone"]').val();
+                if (!phone || phone.length != 11){
+                    alert("请输入收件人手机号！");
+                    return false
+                }
+
+                var addr = $('textarea[name="address"]').val();
+                if (!addr || addr.length<5 ){
+                    alert("请输入收件人地址！");
+                    return false
+                }
+                $(this).attr('name', 'aid');
+                $(this).val(aid);
+            })
+
+        })
+
+    </script>
+{% endblock %}

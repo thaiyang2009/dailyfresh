@@ -1,0 +1,49 @@
+{% extends 'df_user/base_user.html' %}
+{% load static %}
+
+{% load address_handle %}
+
+{% block title %}
+    收货地址
+{% endblock %}
+
+{% block right_content %}
+
+
+
+
+    <div class="right_content clearfix">
+        <h3 class="common_title2">收货地址</h3>
+        <div class="site_con">
+            <dl>
+                {% if user.default_addr %}
+                    <dd>
+                        <label>
+                        <input type="radio" name="addr_id" checked="" value="{{ user.default_addr.id }}">
+                        &nbsp;{% address_handle user.default_addr %}(默认地址)
+                        </label>
+                        <a href="{% url 'change_site' user.default_addr.id %}">编辑</a>
+                    </dd>
+                {% endif %}
+
+                {% for addr in user.addressinfo_set.all %}
+                    {% if user.default_addr.id != addr.id %}
+                        <dd>
+                            <label>
+                            <input type="radio" name="addr_id" value="{{ addr.id }}">
+                            &nbsp;{% address_handle addr %}
+                            </label>
+                        <a href="{% url 'change_site' addr.id %}">编辑</a>
+                        </dd>
+                    {% endif %}
+                {% empty %}
+                    暂时还没地址！
+                {% endfor %}
+
+            </dl>
+
+        </div>
+    </div>
+
+
+{% endblock %}
