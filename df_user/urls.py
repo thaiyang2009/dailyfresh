@@ -38,4 +38,6 @@ urlpatterns = [
     url(r'^edit_info/$', views.edit_info, name='edit_info'),
     url(r'^verify/$', views.verify, name='verify'),
     url(r'^send_captcha/$', views.send_captcha, name='send_captcha'),
+
+    url(r'add_address/$', views.add_address, name="add_address"),
 ]

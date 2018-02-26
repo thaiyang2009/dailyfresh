@@ -9,23 +9,36 @@
 
 {% block right_content %}
 
-
-
-
     <div class="right_content clearfix">
-        <h3 class="common_title2">编辑地址</h3>
+        <h3 class="common_title2">
+            {% if request.resolver_match.url_name == 'change_site' %}
+                编辑地址
+            {% else %}
+                添加地址
+            {% endif %}
+
+        </h3>
         <div class="site_con">
             <form action="" method="post">
                 {% csrf_token %}
                 <div class="form_group">
                     <label>收件人：</label>
                     <input type="text" name="receiver" value="{{ addr.receiver }}">
+                    <p id="receiver_msg" style=" {% if not error.receiver %}display: none;{% endif %}color: red;">{{ error.receiver }}</p>
                 </div>
 
                 <div class="form_group form_group2 addr_area">
                     <label>选择区域：</label>
-
-                    {% select_handle addr %}
+                    {% if request.resolver_match.url_name == 'change_site' %}
+                        {% select_handle addr %}
+                    {% else %}
+                        <select name="" id="">
+                            <option value="">---</option>
+                            {% for province in provinces %}
+                                <option value="{{ province.id }}">{{ province.name }}</option>
+                            {% endfor %}
+                        </select>
+                    {% endif %}
 
 
                 </div>
@@ -33,17 +46,21 @@
                 <div class="form_group form_group2">
                     <label>详细地址：</label>
                     <textarea class="site_area" name="address">{{ addr.address }}</textarea>
+                    <p id="address_msg" style=" {% if not error.address %}display: none;{% endif %}color: red;">{{ error.address }}</p>
                 </div>
 
                 <div class="form_group">
                     <label>手机：</label>
                     <input type="text" name="phone" value="{{ addr.phone }}">
+                    <p id="phone_msg" style=" {% if not error.phone %}display: none;{% endif %}color: red;">{{ error.phone }}</p>
                 </div>
                 <div class="form_group">
                     <label>邮编：</label>
                     <input type="text" name="postcode" value="{{ addr.postcode }}">
+                    <p id="postcode_msg" style=" {% if not error.postcode %}display: none;{% endif %}color: red;">{{ error.postcode }}</p>
                 </div>
                 <input type="submit" name="" value="提交" class="info_submit">
+                <p id="all_msg" style=" {% if not error.all %}display: none;{% endif %}color: red;">{{ error.all }}</p>
             </form>
         </div>
     </div>

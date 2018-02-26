@@ -36,9 +36,8 @@
                         <a href="{% url 'change_site' addr.id %}">编辑</a>
                         </dd>
                     {% endif %}
-                {% empty %}
-                    暂时还没地址！
                 {% endfor %}
+            <a href="{% url 'add_address' %}" style="text-align: center; display: block;">点击这里添加地址！</a>
 
             </dl>
 

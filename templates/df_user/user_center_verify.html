@@ -110,24 +110,28 @@
                     data: {'t': "{{ t }}"},
                     success: function (data) {
                         console.log(data)
-
-                        var $form = $this.parents('form');
-                        $form.data('tid', data.tid);
-                        $form.find('input').css('display', 'inline-block');
-                        $form.find(':submit').css('display', 'inline-block');
-                        $this.attr('disabled', true);
-                        var num = 60;
-                        $this.text(num);
-
-                        var timer = setInterval(function () {
-                            num -= 1;
+                        if (data.status == 200) {
+                            var $form = $this.parents('form');
+                            $form.data('tid', data.tid);
+                            $form.find('input').css('display', 'inline-block');
+                            $form.find(':submit').css('display', 'inline-block');
+                            $this.attr('disabled', true);
+                            var num = 60;
                             $this.text(num);
-                            if (num <= 0) {
-                                $this.text('重发');
-                                $this.attr('disabled', false);
-                                clearInterval(timer);
-                            }
-                        }, 1000)
+
+                            var timer = setInterval(function () {
+                                num -= 1;
+                                $this.text(num);
+                                if (num <= 0) {
+                                    $this.text('重发');
+                                    $this.attr('disabled', false);
+                                    clearInterval(timer);
+                                }
+                            }, 1000)
+                        } else {
+                            alert(data.msg)
+                        }
+
                     }
                 });
 

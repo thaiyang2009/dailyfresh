@@ -16,7 +16,6 @@ import os
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/1.9/howto/deployment/checklist/
 
@@ -24,10 +23,9 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = '8wgp)cgx0&!uvfc80#ct-y4y@*0x*%o0^b)ji0)iv#s&s6&9)4'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = ['*']
-
 
 # Application definition
 
@@ -45,7 +43,7 @@ INSTALLED_APPS = [
     'df_order',
     'haystack',
     'djcelery',
-    # 'django_celery_beat',
+
 ]
 
 MIDDLEWARE_CLASSES = [
@@ -81,7 +79,6 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'dailyfresh.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/1.9/ref/settings/#databases
 
@@ -91,7 +88,6 @@ DATABASES = {
         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
     }
 }
-
 
 # Password validation
 # https://docs.djangoproject.com/en/1.9/ref/settings/#auth-password-validators
@@ -111,7 +107,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/1.9/topics/i18n/
 
@@ -125,7 +120,6 @@ USE_L10N = True
 
 USE_TZ = True
 
-
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/1.9/howto/static-files/
 
@@ -136,7 +130,7 @@ STATICFILES_DIRS = [
 
 # 静态文件目录
 MEDIA_ROOT = os.path.join(BASE_DIR, 'static')
-STATIC_ROOT='/var/www/dailyfresh/static/'
+STATIC_ROOT = '/var/www/dailyfresh/static/'
 
 # 富文本框 admin 配置
 TINYMCE_DEFAULT_CONFIG = {
@@ -155,11 +149,11 @@ HAYSTACK_CONNECTIONS = {
         'PATH': os.path.join(BASE_DIR, 'whoosh_index'),
     }
 }
-#自动生成索引
+# 自动生成索引
 HAYSTACK_SIGNAL_PROCESSOR = 'haystack.signals.RealtimeSignalProcessor'
 
 # 阿里大鱼 短信配置
-ALIDAYU_KEY_ID= '24456101'
+ALIDAYU_KEY_ID = '24456101'
 ALIDAYU_KEY_SECRET = 'ad3f178d008cca744b964110c74a3572'
 ALIDAYU_SMS_FREE_SIGN_NAME = "Python论坛"
 ALIDAYU_SMS_PARAM_BASE = "{code:'%s'}"
@@ -168,16 +162,14 @@ ALIDAYU_EXTEND = ""
 ALIDAYU_SMS_TYPE = "normal"
 ALIDAYU_CACHE_TIMEOUT = 60
 
-
-
 # 缓存配置，未指定数据则使用数据库1
-#CACHES = {
+# CACHES = {
 #    "default": {
 #        "BACKEND": "redis_cache.cache.RedisCache",
 #        "LOCATION": "127.0.0.1:6379",
 #        'TIMEOUT': 60,
 #    },
-#}
+# }
 
 CACHES = {
     "default": {
@@ -190,14 +182,24 @@ CACHES = {
 }
 
 # 发送邮件配置
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'  #email后端
-EMAIL_USE_TLS = False   #是否使用TLS安全传输协议
-EMAIL_USE_SSL = True    #是否使用SSL加密，qq企业邮箱要求使用
-EMAIL_HOST = 'smtp.qq.com'   #发送邮件的邮箱 的 SMTP服务器，这里用了qq企业邮箱
-EMAIL_PORT = 465     #发件箱的SMTP服务器端口
-EMAIL_HOST_USER = '515229443@qq.com'    #发送邮件的邮箱地址
-EMAIL_HOST_PASSWORD = 'miirbdpzgasxbiga'         #发送邮件的邮箱密码
-DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'  # email后端
+EMAIL_USE_TLS = False  # 是否使用TLS安全传输协议
+EMAIL_USE_SSL = True  # 是否使用SSL加密，qq企业邮箱要求使用
+EMAIL_HOST = 'smtp.qq.com'  # 发送邮件的邮箱 的 SMTP服务器，这里用了qq企业邮箱
+EMAIL_PORT = 465  # 发件箱的SMTP服务器端口
+EMAIL_HOST_USER = '515229443@qq.com'  # 发送邮件的邮箱地址
+EMAIL_HOST_PASSWORD = 'miirbdpzgasxbiga'  # 发送邮件的邮箱密码
+DEFAULT_FROM_EMAIL = SERVER_EMAIL = EMAIL_HOST_USER #设置发件人
+EMAIL_SUBJECT_PREFIX = 'dailyfresh error' #为邮件标题的前缀,默认是'[django]'
+
+# 设置管理员名字和邮箱
+ADMINS = (
+    ('admin', '515229443@qq.com'),
+)
+
+# 非空链接，却发生404错误，发送通知MANAGERS
+SEND_BROKEN_LINK_EMAILS = True
+MANAGERS = ADMINS
 
 # celery 配置
 BROKER_URL = 'redis://localhost:6379'
@@ -210,52 +212,72 @@ CELERYD_LOG_FILE = os.path.join(BASE_DIR, 'logs', 'celery', '%n%i.log')
 CELERYBEAT_LOG_FILE = os.path.join(BASE_DIR, 'logs', 'celery', 'beat.log')
 
 import djcelery
+
 djcelery.setup_loader()
 CELERY_IMPORTS = ('df_user.task')
 
 
+# logging日志配置
 LOGGING = {
     'version': 1,
-    'disable_existing_loggers': False,
-    'filters': {
-        'require_debug_true': {
-            '()': 'django.utils.log.RequireDebugTrue',
-        }, # 针对 DEBUG = True 的情况
-    },
-    'formatters': {
+    'disable_existing_loggers': True,
+    'formatters': {  # 日志格式
         'standard': {
+            'format': '%(levelname)s %(asctime)s %(threadName)s:%(thread)d %(pathname)s %(filename)s %(module)s %(funcName)s %(lineno)d: %(message)s',
+            },
+        'concise': {
             'format': '%(levelname)s %(asctime)s %(pathname)s %(filename)s %(module)s %(funcName)s %(lineno)d: %(message)s'
-        }, # 对日志信息进行格式化，每个字段对应了日志格式中的一个字段，更多字段参考官网文档，我认为这些字段比较合适，输出类似于下面的内容
+        },  # 对日志信息进行格式化，每个字段对应了日志格式中的一个字段，更多字段参考官网文档，我认为这些字段比较合适，输出类似于下面的内容
         # INFO 2016-09-03 16:25:20,067 /home/ubuntu/mysite/views.py views.py views get 29: some info...
     },
-    'handlers': {
-        'mail_admins': {
+    'filters': {  # 过滤器
+    },
+    'handlers': {  # 处理器
+        'null': {
+            'level': 'DEBUG',
+            'class': 'logging.NullHandler',
+        },
+        'mail_admins': {  # 发送邮件通知管理员
             'level': 'ERROR',
             'class': 'django.utils.log.AdminEmailHandler',
-             'formatter':'standard'
+            'include_html': True,
         },
-        'file_handler': {
-             'level': 'DEBUG',
-             'class': 'logging.handlers.TimedRotatingFileHandler',
-             'filename': os.path.join(BASE_DIR, 'log/debug.log'),
-             'formatter':'standard'
-        }, # 用于文件输出
-        'console':{
+        'debug': {  # 记录到日志文件(需要创建对应的目录，否则会出错)
+            'level': 'DEBUG',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, "logs", 'debug.log'),  # 日志输出文件
+            'maxBytes': 1024 * 1024 * 5,  # 文件大小
+            'backupCount': 5,  # 备份份数
+            'formatter': 'standard',  # 使用哪种formatters日志格式
+        },
+        'info': {  # 记录到日志文件(需要创建对应的目录，否则会出错)
             'level': 'INFO',
-            'filters': ['require_debug_true'],
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(BASE_DIR, "logs", 'info.log'),  # 日志输出文件
+            'maxBytes': 1024 * 1024 * 5,  # 文件大小
+            'backupCount': 5,  # 备份份数
+            'formatter': 'standard',  # 使用哪种formatters日志格式
+        },
+        'console': {  # 输出到控制台
+            'level': 'DEBUG',
             'class': 'logging.StreamHandler',
-            'formatter': 'standard'
+            'formatter': 'standard',
         },
     },
-    'loggers': {
+    'loggers': {  # logging管理器
         'django': {
-            'handlers' :['file_handler', 'console'],
-            'level':'DEBUG',
-            'propagate': True # 是否继承父类的log信息
-        }, # handlers 来自于上面的 handlers 定义的内容
+            'handlers': ['console'],
+            'level': 'DEBUG',
+            'propagate': False
+        },
         'django.request': {
-            'handlers': ['mail_admins'],
+            'handlers': ['debug', 'info','mail_admins'],
             'level': 'ERROR',
+            'propagate': True,
+        },
+        # 对于不在 ALLOWED_HOSTS 中的请求不发送报错邮件
+        'django.security.DisallowedHost': {
+            'handlers': ['null'],
             'propagate': False,
         },
     }

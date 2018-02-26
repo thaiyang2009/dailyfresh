@@ -1,6 +1,8 @@
 import json
+import re
+import logging
 from django.shortcuts import render, redirect, HttpResponse, resolve_url, get_object_or_404
-from django.http import JsonResponse, Http404
+from django.http import JsonResponse
 from django.core.paginator import Paginator
 from django.core.cache import cache
 from . import models
@@ -9,10 +11,13 @@ from df_order.models import Order
 from .decorators import require_login
 from df_goods.models import GoodsInfo
 from df_cart.models import Cart
+
+logger = logging.getLogger('django')
 # Create your views here.
 
 
 def register(request):
+    """注册页面"""
     user_id = request.session.get('user_id')
     if user_id:
         return redirect('index')
@@ -20,7 +25,7 @@ def register(request):
 
 
 def register_handle(request):
-
+    """注册处理"""
     user_id = request.session.get('user_id')
     if user_id:
         return redirect('index')
@@ -47,9 +52,6 @@ def register_handle(request):
 
 
 def login(request):
-
-
-
     user_id = request.session.get('user_id')
     if user_id:
         return redirect('index')
@@ -63,10 +65,12 @@ def login(request):
 
     return render(request, 'df_user/login.html', context)
 
+
 from django.utils.http import urlsafe_base64_decode
+
+
 def login_handle(request):
     print(request.get_full_path())
-
 
     user_id = request.session.get('user_id')
     if user_id:
@@ -85,7 +89,6 @@ def login_handle(request):
         context['user_error'] = '用户名错误！'
         return render(request, 'df_user/login.html', context)
 
-
     if not user_li[0].check_pwd(pwd):
         context['pwd_error'] = '密码错误！'
         return render(request, 'df_user/login.html', context)
@@ -103,7 +106,7 @@ def login_handle(request):
         response = redirect(resolve_url('info'))
 
     if request.POST.get('remember', False):
-        response.set_cookie('username', user_obj.uname, max_age=60*60*24*7)
+        response.set_cookie('username', user_obj.uname, max_age=60 * 60 * 24 * 7)
     else:
         response.delete_cookie('username')
 
@@ -125,6 +128,7 @@ def check_username(request):
     }
     return HttpResponse(json.dumps(data))
 
+
 def check_email(request):
     email = request.GET.get('email')
     count = models.UserInfo.objects.filter(uemail=email).count()
@@ -134,9 +138,9 @@ def check_email(request):
     }
     return HttpResponse(json.dumps(data))
 
+
 @require_login
 def site(request):
-
     if request.method == 'POST':
         consignee = request.POST.get('consignee')
         address = request.POST.get('address')
@@ -182,34 +186,41 @@ def site(request):
 @require_login
 def change_site(request, aid):
     addr_obj = get_object_or_404(models.AddressInfo, pk=aid)
-
-
+    erros_msg = {}
     if request.method == 'POST':
         receiver = request.POST.get('receiver')
         address = request.POST.get('address')
         phone = request.POST.get('phone')
         aid = request.POST.get('aid')
+        postcode = request.POST.get('postcode', None)
 
-        if len(receiver)>=2 and len(address)>=5 and len(phone)==11:
+        if len(receiver) < 2:
+            erros_msg['receiver'] = "收件人长度不能小于2个字符！"
+        elif len(address) < 5:
+            erros_msg['address'] = "收件详细地址长度不能小于5个字符！"
+        elif not re.match(r'^1([358][0-9]|4[579]|66|7[0135678]|9[89])[0-9]{8}$', phone):
+            erros_msg['phone'] = "手机号格式不正确！"
+        elif postcode and not re.match(r'^[1-9][0-9]{5}$', postcode):
+            erros_msg['postcode'] = "邮编格式不正确！"
+        else:
             area_obj = get_object_or_404(models.AreaInfo, pk=aid)
             addr_obj.area = area_obj
             addr_obj.receiver = receiver
             addr_obj.address = address
             addr_obj.phone = phone
             addr_obj.save()
-
-        next_url = request.GET.get('next_url')
-        if next_url:
-            return redirect(next_url)
-        return redirect('site')
+        if not erros_msg:
+            next_url = request.GET.get('next_url')
+            if next_url:
+                return redirect(next_url)
+            return redirect('site')
 
     context = {
-        'addr': addr_obj
+        'addr': addr_obj,
+        'error': erros_msg,
     }
 
-
     return render(request, 'df_user/user_center_edit.html', context)
-
 
 
 @require_login
@@ -249,7 +260,6 @@ def order(request):
 
     p = Paginator(orders, 5)
 
-
     if pid > p.num_pages or pid < 1:
         pid = 1
     page = p.page(pid)
@@ -270,9 +280,6 @@ def order(request):
     return render(request, 'df_user/user_center_order.html', context)
 
 
-
-
-
 def area_handle(request):
     aid = request.GET.get('aid')
     area_obj = models.AreaInfo.objects.get(pk=aid)
@@ -283,39 +290,52 @@ def area_handle(request):
     }
     return HttpResponse(json.dumps(context))
 
+
 @require_login
 def edit_info(request):
+    msgs = []
+    u_dic = {}
     if request.method == "POST":
         data = request.POST.get('data')
         user_obj = request.df_user
         if data:
             dic = json.loads(data)
 
-        u_dic = {}
-        for k,v in dic.items():
-            if hasattr(user_obj, k):
-                setattr(user_obj, k, v)
-                u_dic[k] = v
-        if 'uemail' in dic:
-            user_obj.verify_e = False
-        if 'uphone' in dic:
-            user_obj.verify_p = False
-        user_obj.save()
+            # 判断邮箱、手机号是否变更，如果变更把验证状态改为False
+            if 'uemail' in dic and dic['uemail'] != user_obj.uemail:
+                if re.match(r'\w@\w*\.\w', dic['uemail']):
+                    user_obj.verify_e = False
+                else:
+                    dic.pop('uemail')
+                    msgs.append('邮箱格式不正确！')
+
+            if 'uphone' in dic and dic['uphone'] != user_obj.uphone:
+                if re.match(r'^1([358][0-9]|4[579]|66|7[0135678]|9[89])[0-9]{8}$', dic['uphone']):
+                    user_obj.verify_p = False
+                else:
+                    dic.pop('uphone')
+                    msgs.append('手机号格式不正确！')
+
+            for k, v in dic.items():
+                if hasattr(user_obj, k) and getattr(user_obj, k) != v:
+                    setattr(user_obj, k, v)
+                    u_dic[k] = v
+
+            user_obj.save()
+        else:
+            msgs.append("参数错误！")
 
         response = {
-            'status': 200,
+            'status': 400 if msgs else 200,
+            'msg': msgs,
             'data': u_dic,
         }
 
         return JsonResponse(response)
 
 
-
-
 @require_login
 def verify(request):
-
-
     if request.method == 'GET':
         t = request.GET.get('t')
         if t:
@@ -374,25 +394,104 @@ def verify(request):
     return redirect('info')
 
 
-
 @require_login
 def send_captcha(request):
     t = request.GET.get('t')
     data = {
-        'status': 200
+        'status': 200,
+        'msg': 'OK',
     }
     if t:
         if t == 'p' and not request.df_user.verify_p:
+            # 查看缓存中是否存在，如果存在则发送太频繁
+            cache_code = cache.get(request.df_user.uphone)
+            if cache_code:
+                data['status'] = 401
+                data['msg'] = "发送太频繁稍候重试！"
+                return JsonResponse(data)
+
             # 发送手机验证码
-            result = task.send_sms_captcha.delay(request.df_user.uphone)
+            try:
+                result = task.send_sms_captcha.delay(request.df_user.uphone)
+            except Exception as e:
+                logger.error("短信发送失败！")
+                data['status'] = 400
+                data['msg'] = "短信发送失败！"
+                return JsonResponse(data)
             data['tid'] = result.id
         elif t == 'e' and not request.df_user.verify_e:
+            # 查看缓存中是否存在，如果存在则发送太频繁
+            cache_code = cache.get(request.df_user.uemail)
+            if cache_code:
+                data['status'] = 401
+                data['msg'] = "发送太频繁稍候重试！"
+                return JsonResponse(data)
+
             # 发送邮箱验证码
-            result = task.send_email_captcha.delay(request.df_user.uemail)
+            try:
+                result = task.send_email_captcha.delay(request.df_user.uemail)
+            except Exception as e:
+                logger.error("邮件发送失败！")
+                data['status'] = 400
+                data['msg'] = "邮件发送失败！"
+                return JsonResponse(data)
             data['tid'] = result.id
         else:
             data['status'] = 400
+            data['msg'] = '未知类型'
     else:
         data['status'] = 400
+        data['msg'] = "缺少参数"
+
     return JsonResponse(data)
+
+
+@require_login
+def add_address(request):
+    error_msg = {}
+    addr = {}
+    if request.method == 'POST':
+        addr['receiver'] = request.POST.get('receiver')
+        addr['address'] = request.POST.get('address')
+        addr['phone'] = request.POST.get('phone')
+        addr['aid'] = request.POST.get('aid')
+        addr['postcode'] = request.POST.get('postcode', None)
+
+
+        if len(addr['receiver']) < 2:
+            error_msg['receiver'] = "收件人长度不能小于2个字符！"
+        elif len(addr['address']) < 5:
+            error_msg['address'] = "收件详细地址长度不能小于5个字符！"
+        elif not re.match(r'^1([358][0-9]|4[579]|66|7[0135678]|9[89])[0-9]{8}$', addr['phone']):
+            error_msg['phone'] = "手机号格式不正确！"
+        elif addr['postcode'] and not re.match(r'^[1-9][0-9]{5}$', addr['postcode']):
+            error_msg['postcode'] = "邮编格式不正确！"
+        else:
+            try:
+                addr_obj = models.AddressInfo()
+                addr_obj.user = request.df_user
+                area_obj = get_object_or_404(models.AreaInfo, pk=addr['aid'])
+                addr_obj.area = area_obj
+                addr_obj.receiver = addr['receiver']
+                addr_obj.address = addr['address']
+                addr_obj.phone = addr['phone']
+                addr_obj.postcode = addr['postcode']
+                addr_obj.save()
+            except Exception as e:
+                logger.error(e)
+                error_msg['all'] = "添加失败!"
+        if not error_msg:
+            next_url = request.GET.get('next_url')
+            if next_url:
+                return redirect(next_url)
+            return redirect('site')
+
+    context = {
+        'provinces': models.AreaInfo.objects.filter(parea__isnull=True).all(),
+        'error': error_msg,
+        'addr': addr,
+    }
+
+    return render(request, 'df_user/user_center_edit.html', context)
+
 

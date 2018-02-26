@@ -25,11 +25,14 @@
                 <li data-name="uphone">
                     <span>联系方式：</span>
                     <b>{{ user.uphone|default:'--' }}</b>
-                    {% if user.verify_p == False %}
-                        <a id="verify_btn" href="{% url 'verify' %}?t=p" style="padding-left: 10px">验证</a>
-                    {% else %}
-                        <a style="padding-left: 10px">已验证</a>
+                    {% if user.uphone %}
+                        {% if user.verify_p == False %}
+                            <a id="verify_btn" href="{% url 'verify' %}?t=p" style="padding-left: 10px">验证</a>
+                        {% else %}
+                            <a style="padding-left: 10px">已验证</a>
+                        {% endif %}
                     {% endif %}
+
                 </li>
                 <li data-name="uemail">
                     <span>邮箱地址：</span>
@@ -71,6 +74,7 @@
 
 
         function a() {
+            var $this = $(this);
             // 获取所有li
             var $lis = $(this).parent().siblings(':gt(0)');
             // 初始化两个数组，存放修改后的键和值
@@ -98,6 +102,7 @@
                     url: "{% url 'edit_info' %}",
                     data: {'data': JSON.stringify(cdata)},  // 将字典转成json传给服务端
                     success: function (data) {
+                        console.log(data)
                         if (data.status == 200) {
                             // 修改成功！
                             $lis.each(function () {
@@ -109,8 +114,9 @@
                                     $input.before('<b>' + $input.data('old') + '</b>').remove();
                                 }
                             });
+                            $this.text('修改').unbind().click(b);
                         } else {
-                            alert("修改失败, 请稍后重试！")
+                            alert(data.msg[0])
                         }
                     }
                 })
@@ -120,9 +126,10 @@
                     var $input = $(this).find('input');
                     $input.before('<b>' + $input.data('old') + '</b>').remove();
                 });
+                $(this).text('修改').unbind().click(b);
 
             }
-            $(this).text('修改').unbind().click(b);
+
 
         }
 
