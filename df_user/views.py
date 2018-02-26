@@ -3,6 +3,7 @@ import re
 import logging
 from django.shortcuts import render, redirect, HttpResponse, resolve_url, get_object_or_404
 from django.http import JsonResponse
+from django.utils.http import urlunquote
 from django.core.paginator import Paginator
 from django.core.cache import cache
 from . import models
@@ -66,7 +67,7 @@ def login(request):
     return render(request, 'df_user/login.html', context)
 
 
-from django.utils.http import urlsafe_base64_decode
+
 
 
 def login_handle(request):
@@ -100,7 +101,7 @@ def login_handle(request):
     # 获取
     next_url = request.GET.get('next_url')
     if next_url:
-        next_url = urlsafe_base64_decode(next_url).decode()
+        next_url = urlunquote(next_url)
         response = redirect(next_url)
     else:
         response = redirect(resolve_url('info'))
